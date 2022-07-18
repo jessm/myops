@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 func main() {
@@ -27,9 +28,21 @@ func main() {
 	defer out.Close()
 	io.Copy(os.Stdout, out)
 
+	containerPort, err := nat.NewPort("tcp", "80")
+	if err != nil {
+		panic(err)
+	}
+	hostBinding := nat.PortBinding{
+		HostIP:   "0.0.0.0",
+		HostPort: "80",
+	}
+	portBinding := nat.PortMap{containerPort: []nat.PortBinding{hostBinding}}
+
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
-	}, nil, nil, nil, "")
+	}, &container.HostConfig{
+		PortBindings: portBinding,
+	}, nil, nil, "nginx-demo")
 	if err != nil {
 		panic(err)
 	}
