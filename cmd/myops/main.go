@@ -7,14 +7,13 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	network "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	natting "github.com/docker/go-connections/nat"
+	"github.com/docker/go-connections/nat"
 )
 
 func runContainer(client *client.Client, imagename string, containername string, port string, inputEnv []string) error {
 	// Define a PORT opening
-	newport, err := natting.NewPort("tcp", port)
+	newport, err := nat.NewPort("tcp", port)
 	if err != nil {
 		fmt.Println("Unable to create docker port")
 		return err
@@ -23,8 +22,8 @@ func runContainer(client *client.Client, imagename string, containername string,
 	// Configured hostConfig:
 	// https://godoc.org/github.com/docker/docker/api/types/container#HostConfig
 	hostConfig := &container.HostConfig{
-		PortBindings: natting.PortMap{
-			newport: []natting.PortBinding{
+		PortBindings: nat.PortMap{
+			newport: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
 					HostPort: port,
@@ -34,25 +33,11 @@ func runContainer(client *client.Client, imagename string, containername string,
 		RestartPolicy: container.RestartPolicy{
 			Name: "always",
 		},
-		LogConfig: container.LogConfig{
-			Type:   "json-file",
-			Config: map[string]string{},
-		},
 	}
-
-	// Define Network config (why isn't PORT in here...?:
-	// https://godoc.org/github.com/docker/docker/api/types/network#NetworkingConfig
-	networkConfig := &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{},
-	}
-	gatewayConfig := &network.EndpointSettings{
-		Gateway: "gatewayname",
-	}
-	networkConfig.EndpointsConfig["bridge"] = gatewayConfig
 
 	// Define ports to be exposed (has to be same as hostconfig.portbindings.newport)
-	exposedPorts := map[natting.Port]struct{}{
-		newport: struct{}{},
+	exposedPorts := map[nat.Port]struct{}{
+		newport: {},
 	}
 
 	// Configuration
@@ -61,7 +46,6 @@ func runContainer(client *client.Client, imagename string, containername string,
 		Image:        imagename,
 		Env:          inputEnv,
 		ExposedPorts: exposedPorts,
-		Hostname:     fmt.Sprintf("%s-hostnameexample", imagename),
 	}
 
 	// Creating the actual container. This is "nil,nil,nil" in every example.
@@ -69,7 +53,7 @@ func runContainer(client *client.Client, imagename string, containername string,
 		context.Background(),
 		config,
 		hostConfig,
-		networkConfig,
+		nil,
 		nil,
 		containername,
 	)
@@ -81,21 +65,20 @@ func runContainer(client *client.Client, imagename string, containername string,
 
 	// Run the actual container
 	client.ContainerStart(context.Background(), cont.ID, types.ContainerStartOptions{})
-	log.Printf("Container %s is created", cont.ID)
 
 	return nil
 }
 
 func main() {
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Fatalf("Unable to create docker client")
+		panic(err)
 	}
 
 	imagename := "nginxdemos/hello"
 	containername := "demo"
-	portopening := "8080"
-	inputEnv := []string{fmt.Sprintf("LISTENINGPORT=%s", portopening)}
+	portopening := "80"
+	inputEnv := []string{}
 	err = runContainer(cli, imagename, containername, portopening, inputEnv)
 	if err != nil {
 		log.Println(err)
