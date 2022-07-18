@@ -1,0 +1,23 @@
+##
+## Build
+##
+FROM golang:1.18-buster AS build
+
+WORKDIR /app
+
+COPY cmd/myops/main.go ./
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+RUN go build -o /myops
+
+##
+## Deploy
+##
+
+FROM gcr.io/distroless/base-debian10
+
+COPY --from=build /myops /myops
+
+ENTRYPOINT ["/myops"]

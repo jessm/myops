@@ -3,7 +3,7 @@ DevOps helper for single host deployment
 
 To build example:
 ```
-docker build -t ping .
+docker build -t ping -f Dockerfile.ping .
 ```
 
 To run example:
