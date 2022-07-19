@@ -14,7 +14,10 @@ func update() {
 
 	configs := parseConfig()
 
-	fmt.Println(configs)
+	for projectName, config := range configs {
+		shortHash := remoteShorthash(config.RepoUrl, config.Branch)
+		fmt.Printf("%s: %s\n", projectName, shortHash)
+	}
 }
 
 func main() {
