@@ -10,11 +10,14 @@ import (
 	"sync"
 )
 
-const pingFile string = "ping.txt"
+const (
+	pingFile   string = "ping.txt"
+	listenPort string = "LISTENPORT"
+)
 
 var fileLock sync.Mutex
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func handler(w http.ResponseWriter, _ *http.Request) {
 	fileLock.Lock()
 	defer fileLock.Unlock()
 
@@ -50,8 +53,10 @@ func main() {
 		}
 	}
 
+	portNumber := os.Getenv(listenPort)
+
 	http.HandleFunc("/ping", handler)
 
 	fmt.Println("Ping server now serving")
-	http.ListenAndServe(":8123", nil)
+	http.ListenAndServe(":"+portNumber, nil)
 }
