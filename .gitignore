@@ -4,7 +4,6 @@
 *.dll
 *.so
 *.dylib
-myops
 
 # Test binary, built with `go test -c`
 *.test
@@ -17,3 +16,6 @@ myops
 
 # myops config
 myops_config.json
+
+# build
+build/*
