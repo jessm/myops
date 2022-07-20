@@ -11,7 +11,13 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-func runContainer(client *cli.Client, imagename string, containername string, port string, envVars map[string]string) error {
+func runContainer(imagename string, containername string, port string, envVars map[string]string) error {
+	ctx := context.Background()
+	client, err := cli.NewClientWithOpts(cli.FromEnv, cli.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+
 	containerPort, err := nat.NewPort("tcp", port)
 	if err != nil {
 		fmt.Println("Unable to create port")
@@ -48,7 +54,7 @@ func runContainer(client *cli.Client, imagename string, containername string, po
 	}
 
 	container, err := client.ContainerCreate(
-		context.Background(),
+		ctx,
 		containerConfig,
 		hostConfig,
 		nil,
@@ -61,7 +67,7 @@ func runContainer(client *cli.Client, imagename string, containername string, po
 		return err
 	}
 
-	client.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{})
+	client.ContainerStart(ctx, container.ID, types.ContainerStartOptions{})
 
 	return nil
 }

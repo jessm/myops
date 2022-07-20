@@ -31,6 +31,7 @@ const (
 )
 
 const CaddyImage string = "caddy:2.5.2"
+const CaddyContainer string = "caddy"
 
 const caddyTemplate string = `{{ range .C }}
 {{ .DomainMatcher }} {
@@ -69,6 +70,20 @@ func runCaddy() {
 	client, err := cli.NewClientWithOpts(cli.FromEnv, cli.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
+	}
+
+	// Check if we're already running
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, c := range containers {
+		for _, name := range c.Names {
+			if name == CaddyContainer {
+				return
+			}
+		}
 	}
 
 	// If the volumes don't exist yet, create them
@@ -131,7 +146,7 @@ func runCaddy() {
 		hostConfig,
 		nil,
 		nil,
-		"caddy",
+		CaddyContainer,
 	)
 
 	if err != nil {

@@ -13,8 +13,6 @@ func update() {
 	}
 
 	renderCaddyfile(configs)
-	fmt.Println("Caddyfile contents:")
-	printCaddyfile()
 
 	runCaddy()
 }
