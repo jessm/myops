@@ -33,6 +33,8 @@ func parseConfig() map[string]Config {
 		panic(err)
 	}
 
+	// TODO: fill in default values if they're empty
+
 	err = json.Unmarshal(content, &configs)
 	if err != nil {
 		panic(err)

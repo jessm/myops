@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/docker/docker/api/types"
@@ -80,10 +81,35 @@ func runCaddy() {
 
 	for _, c := range containers {
 		for _, name := range c.Names {
-			if name == CaddyContainer {
+			if name == "/"+CaddyContainer {
 				return
 			}
 		}
+	}
+
+	// If we haven't pulled the image yet, pull it
+	images, err := client.ImageList(ctx, types.ImageListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	caddyImageFound := false
+	for _, i := range images {
+		for _, repo := range i.RepoDigests {
+			if strings.Split(repo, "@")[0] == CaddyContainer {
+				caddyImageFound = true
+				break
+			}
+		}
+	}
+
+	if !caddyImageFound {
+		out, err := client.ImagePull(ctx, CaddyImage, types.ImagePullOptions{})
+		if err != nil {
+			panic(err)
+		}
+
+		defer out.Close()
 	}
 
 	// If the volumes don't exist yet, create them
