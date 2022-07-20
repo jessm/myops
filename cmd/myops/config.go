@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
+	"os"
 )
 
-const configFile string = "myops_config.json"
+const configFile string = "/var/myops/myops_config.json"
 
 type Config struct {
 	DomainMatcher string            `json:"domainMatcher"`
@@ -20,6 +22,11 @@ type Config struct {
 type Configs map[string]Config
 
 func parseConfig() map[string]Config {
+	_, err := os.Stat(configFile)
+	if errors.Is(err, os.ErrNotExist) {
+		writeSampleConfig()
+	}
+
 	var configs map[string]Config
 	content, err := ioutil.ReadFile(configFile)
 	if err != nil {
@@ -38,7 +45,7 @@ func writeSampleConfig() {
 	sample := map[string]Config{
 		"ping": {
 			DomainMatcher: "localhost:3000",
-			RepoUrl:       "git@github.com:jessm/myops",
+			RepoUrl:       "https://github.com/jessm/myops",
 			Branch:        "myops-container",
 			Dockerfile:    "Dockerfile.ping",
 			EnvVars: map[string]string{

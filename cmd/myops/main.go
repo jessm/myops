@@ -1,17 +1,10 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"os"
 )
 
 func update() {
-	_, err := os.Stat(configFile)
-	if errors.Is(err, os.ErrNotExist) {
-		writeSampleConfig()
-	}
-
 	configs := parseConfig()
 
 	for projectName, config := range configs {
@@ -20,7 +13,10 @@ func update() {
 	}
 
 	renderCaddyfile(configs)
+	fmt.Println("Caddyfile contents:")
 	printCaddyfile()
+
+	runCaddy()
 }
 
 func main() {
