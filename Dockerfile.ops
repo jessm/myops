@@ -5,11 +5,11 @@ FROM golang:1.18-buster AS build
 
 WORKDIR /app
 
-COPY cmd/myops/main.go ./
 COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
+COPY cmd/myops/*.go ./
 RUN go build -o /myops
 
 ##

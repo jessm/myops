@@ -18,6 +18,9 @@ func update() {
 		shortHash := remoteShorthash(config.RepoUrl, config.Branch)
 		fmt.Printf("%s: %s\n", projectName, shortHash)
 	}
+
+	renderCaddyfile(configs)
+	printCaddyfile()
 }
 
 func main() {
