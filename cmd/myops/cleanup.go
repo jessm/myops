@@ -12,11 +12,10 @@ import (
 )
 
 func removeImage(ctx context.Context, client *cli.Client, id string) {
-	resp, err := client.ImageRemove(ctx, id, types.ImageRemoveOptions{})
+	_, err := client.ImageRemove(ctx, id, types.ImageRemoveOptions{})
 	if err != nil {
 		fmt.Println("  Couldn't remove image", id)
 		fmt.Println("  Error:", err)
-		fmt.Println("  Response:", resp)
 	}
 }
 

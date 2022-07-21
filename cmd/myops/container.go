@@ -11,14 +11,8 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-func runContainer(imagename string, containername string, port string, envVars map[string]string) error {
-	ctx := context.Background()
-	client, err := cli.NewClientWithOpts(cli.FromEnv, cli.WithAPIVersionNegotiation())
-	if err != nil {
-		panic(err)
-	}
-
-	containerPort, err := nat.NewPort("tcp", port)
+func runContainer(ctx context.Context, client *cli.Client, config Config, imageName string, containerName string) error {
+	containerPort, err := nat.NewPort("tcp", config.Port)
 	if err != nil {
 		fmt.Println("Unable to create port")
 		return err
@@ -29,7 +23,7 @@ func runContainer(imagename string, containername string, port string, envVars m
 			containerPort: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
-					HostPort: port,
+					HostPort: config.Port,
 				},
 			},
 		},
@@ -42,13 +36,13 @@ func runContainer(imagename string, containername string, port string, envVars m
 		containerPort: {},
 	}
 
-	envList := make([]string, 0, len(envVars))
-	for key, value := range envVars {
+	envList := make([]string, 0, len(config.EnvVars))
+	for key, value := range config.EnvVars {
 		envList = append(envList, key+"="+value)
 	}
 
 	containerConfig := &container.Config{
-		Image:        imagename,
+		Image:        imageName,
 		Env:          envList,
 		ExposedPorts: exposedPorts,
 	}
@@ -59,7 +53,7 @@ func runContainer(imagename string, containername string, port string, envVars m
 		hostConfig,
 		nil,
 		nil,
-		containername,
+		containerName,
 	)
 
 	if err != nil {

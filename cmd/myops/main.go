@@ -22,10 +22,15 @@ func update() {
 	cleanupImages(ctx, client, configs)
 	cleanupVolumes(ctx, client, configs)
 
-	fmt.Println("Project short hashes:")
 	for projectName, config := range configs {
 		shortHash := remoteShorthash(config.RepoUrl, config.Branch)
-		fmt.Printf("  - %s: %s\n", projectName, shortHash)
+		projectTag := projectName + ":" + shortHash
+
+		buildImage(ctx, client, config, projectName)
+		err := runContainer(ctx, client, config, projectName, projectTag)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	renderCaddyfile(configs)
@@ -34,19 +39,5 @@ func update() {
 }
 
 func main() {
-	// cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// imagename := "nginxdemos/hello"
-	// containername := "demo"
-	// portopening := "80"
-	// inputEnv := []string{}
-	// err = runContainer(cli, imagename, containername, portopening, inputEnv)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-
 	update()
 }
