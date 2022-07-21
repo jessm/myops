@@ -28,16 +28,21 @@ func cleanupImages(ctx context.Context, client *cli.Client, configs Configs) {
 
 	fmt.Println("Images for cleaning:")
 	for _, i := range images {
-		if len(i.RepoDigests) > 1 {
-			fmt.Println("Found container with multiple repos:", i.RepoDigests, ", skipping")
+		if len(i.RepoTags) > 1 {
+			fmt.Println("Found image with multiple tags:", i.RepoTags, ", skipping")
 			continue
 		}
-		for _, repo := range i.RepoDigests {
-			// Skip the caddy image
-			if strings.Split(repo, "@")[0] == strings.Split(CaddyImage, ":")[0] {
-				continue
+		if len(i.RepoTags) < 1 {
+			fmt.Println("Found image with less than 1 tag:", i.ID, ", skipping")
+			fmt.Println(i.RepoDigests, i.RepoTags)
+			continue
+		}
+		for _, tag := range i.RepoTags {
+			// Skip the caddy image and myops image
+			if tag == CaddyImage || strings.Split(tag, ":")[0] == "myops" {
+				break
 			}
-			fmt.Println("  - " + repo + " - " + i.ID)
+			fmt.Println("  - " + tag + " - " + i.ID)
 			removeImage(ctx, client, i.ID)
 		}
 	}
