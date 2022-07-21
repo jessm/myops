@@ -86,6 +86,19 @@ func runCaddy() {
 	for _, c := range containers {
 		for _, name := range c.Names {
 			if name == "/"+CaddyContainer {
+				// Reload the configuration
+				resp, err := client.ContainerExecCreate(ctx, c.ID, types.ExecConfig{
+					WorkingDir: "/etc/caddy",
+					Cmd:        []string{"caddy", "reload"},
+				})
+				if err != nil {
+					panic(err)
+				}
+
+				if err := client.ContainerExecStart(ctx, resp.ID, types.ExecStartCheck{}); err != nil {
+					panic(err)
+				}
+
 				return
 			}
 		}

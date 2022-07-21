@@ -110,7 +110,7 @@ func writeConfigToOldConfig() {
 		panic(err)
 	}
 
-	//Copy all the contents to the desitination file
+	// Copy all the contents to the desitination file
 	err = ioutil.WriteFile(oldConfigFile, bytesRead, 0777)
 	if err != nil {
 		panic(err)
