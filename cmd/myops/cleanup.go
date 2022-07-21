@@ -4,14 +4,20 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	cli "github.com/docker/docker/client"
 )
 
-func removeImage(id string) {
-
+func removeImage(ctx context.Context, client *cli.Client, id string) {
+	resp, err := client.ImageRemove(ctx, id, types.ImageRemoveOptions{})
+	if err != nil {
+		fmt.Println("  Couldn't remove image", id)
+		fmt.Println("  Error:", err)
+		fmt.Println("  Response:", resp)
+	}
 }
 
 func cleanupImages(ctx context.Context, client *cli.Client, configs Configs) {
@@ -22,14 +28,31 @@ func cleanupImages(ctx context.Context, client *cli.Client, configs Configs) {
 
 	fmt.Println("Images for cleaning:")
 	for _, i := range images {
+		if len(i.RepoDigests) > 1 {
+			fmt.Println("Found container with multiple repos:", i.RepoDigests, ", skipping")
+			continue
+		}
 		for _, repo := range i.RepoDigests {
+			// Skip the caddy image
+			if strings.Split(repo, "@")[0] == strings.Split(CaddyImage, ":")[0] {
+				continue
+			}
 			fmt.Println("  - " + repo + " - " + i.ID)
+			removeImage(ctx, client, i.ID)
 		}
 	}
 }
 
-func removeContainer(id string) {
-
+func removeContainer(ctx context.Context, client *cli.Client, id string) {
+	err := client.ContainerStop(ctx, id, nil)
+	if err != nil {
+		fmt.Println("  Couldn't stop container", id)
+	}
+	err = client.ContainerRemove(ctx, id, types.ContainerRemoveOptions{})
+	if err != nil {
+		fmt.Println("  Couldn't remove container", id)
+		fmt.Println("  Error:", err)
+	}
 }
 
 func cleanupContainers(ctx context.Context, client *cli.Client, configs Configs) {
@@ -58,16 +81,21 @@ func cleanupContainers(ctx context.Context, client *cli.Client, configs Configs)
 		}
 		for _, name := range c.Names {
 			// Skip caddy
-			if name == CaddyContainer {
+			if name == "/"+CaddyContainer {
 				continue
 			}
 			fmt.Println("  - " + name + ": " + c.ID)
+			removeContainer(ctx, client, c.ID)
 		}
 	}
 }
 
-func removeVolume(id string) {
-
+func removeVolume(ctx context.Context, client *cli.Client, name string) {
+	err := client.VolumeRemove(ctx, name, false)
+	if err != nil {
+		fmt.Println("  Couldn't remove volume", name)
+		fmt.Println("  Error:", err)
+	}
 }
 
 func cleanupVolumes(ctx context.Context, client *cli.Client, configs Configs) {
@@ -86,5 +114,6 @@ func cleanupVolumes(ctx context.Context, client *cli.Client, configs Configs) {
 		}
 		// Note: bind mount volumes aren't shown, so we're safe for those
 		fmt.Println("  - " + v.Name)
+		removeVolume(ctx, client, v.Name)
 	}
 }
