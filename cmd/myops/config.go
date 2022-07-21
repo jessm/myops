@@ -33,7 +33,25 @@ func parseConfig() map[string]Config {
 		panic(err)
 	}
 
-	// TODO: fill in default values if they're empty
+	for name, config := range configs {
+		if config.DomainMatcher == "" {
+			panic("Config parse error: domainMatcher can't be empty, project " + name)
+		}
+		if config.RepoUrl == "" {
+			panic("Config parse error: repoUrl can't be empty, project " + name)
+		}
+		if config.Branch == "" {
+			config.Branch = "main"
+		}
+		if config.Dockerfile == "" {
+			config.Dockerfile = "Dockerfile"
+		}
+		if config.Port == "" {
+			config.Port = "80"
+		}
+		// If volumePath is empty, just don't mount volumes
+		// If envVars are empty, just don't add env vars
+	}
 
 	err = json.Unmarshal(content, &configs)
 	if err != nil {
