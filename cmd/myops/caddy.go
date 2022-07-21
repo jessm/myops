@@ -16,7 +16,8 @@ import (
 )
 
 type templateConfigs struct {
-	C Configs
+	C     Configs
+	Ports map[string]string
 }
 
 const (
@@ -34,9 +35,9 @@ const (
 const CaddyImage string = "caddy:2.5.2"
 const CaddyContainer string = "caddy"
 
-const caddyTemplate string = `{{ range .C }}
-{{ .DomainMatcher }} {
-	reverse_proxy localhost:{{ .Port }}
+const caddyTemplate string = `{{ range $name, $config := .C }}
+{{ $config.DomainMatcher }} {
+	reverse_proxy localhost:{{ index $.Ports $name }}
 }
 {{ end }}`
 
@@ -49,7 +50,7 @@ func printCaddyfile() {
 	fmt.Println(string(bytes))
 }
 
-func renderCaddyfile(configs Configs) {
+func renderCaddyfile(configs Configs, portMap map[string]string) {
 	t, err := template.New("Caddyfile").Parse(caddyTemplate)
 	if err != nil {
 		panic(err)
@@ -60,7 +61,10 @@ func renderCaddyfile(configs Configs) {
 		panic(err)
 	}
 
-	err = t.Execute(file, templateConfigs{configs})
+	err = t.Execute(file, templateConfigs{
+		C:     configs,
+		Ports: portMap,
+	})
 	if err != nil {
 		panic(err)
 	}

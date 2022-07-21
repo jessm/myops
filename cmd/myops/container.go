@@ -11,7 +11,7 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-func runContainer(ctx context.Context, client *cli.Client, config Config, imageName string, containerName string) error {
+func runContainer(ctx context.Context, client *cli.Client, config Config, hostPort string, imageName string, projectName string) error {
 	containerPort, err := nat.NewPort("tcp", config.Port)
 	if err != nil {
 		fmt.Println("Unable to create port")
@@ -23,13 +23,19 @@ func runContainer(ctx context.Context, client *cli.Client, config Config, imageN
 			containerPort: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
-					HostPort: config.Port,
+					HostPort: hostPort,
 				},
 			},
 		},
 		RestartPolicy: container.RestartPolicy{
 			Name: "always",
 		},
+	}
+
+	if config.VolumePath != "" {
+		hostConfig.Binds = []string{
+			projectName + ":" + config.VolumePath,
+		}
 	}
 
 	exposedPorts := map[nat.Port]struct{}{
@@ -53,7 +59,7 @@ func runContainer(ctx context.Context, client *cli.Client, config Config, imageN
 		hostConfig,
 		nil,
 		nil,
-		containerName,
+		projectName,
 	)
 
 	if err != nil {

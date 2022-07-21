@@ -26,6 +26,6 @@ func buildImage(ctx context.Context, client *cli.Client, config Config, projectT
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
-		fmt.Println("Docker daemon:", scanner.Text())
+		fmt.Println("Building", projectTag, scanner.Text())
 	}
 }

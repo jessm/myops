@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -39,6 +40,10 @@ func cleanupImages(ctx context.Context, client *cli.Client, configs Configs) {
 		for _, tag := range i.RepoTags {
 			// Skip the caddy image and myops image
 			if tag == CaddyImage || strings.Split(tag, ":")[0] == "myops" {
+				break
+			}
+			// Skip if it's in the project list, it'll get cleaned later if it's outdated
+			if _, ok := configs[strings.Split(tag, ":")[0]]; ok {
 				break
 			}
 			fmt.Println("  - " + tag + " - " + i.ID)
@@ -83,6 +88,10 @@ func cleanupContainers(ctx context.Context, client *cli.Client, configs Configs)
 		if hostname == c.ID[:len(hostname)] {
 			continue
 		}
+		// Skip if it's in the project list
+		if _, ok := configs[strings.Split(c.Image, ":")[0]]; ok {
+			continue
+		}
 		for _, name := range c.Names {
 			// Skip caddy
 			if name == "/"+CaddyContainer {
@@ -116,8 +125,62 @@ func cleanupVolumes(ctx context.Context, client *cli.Client, configs Configs) {
 		if v.Name == CaddyDataVolumeName || v.Name == CaddyConfigVolumeName {
 			continue
 		}
+		// Skip if it's in the project list
+		if _, ok := configs[v.Name]; ok {
+			continue
+		}
 		// Note: bind mount volumes aren't shown, so we're safe for those
 		fmt.Println("  - " + v.Name)
 		removeVolume(ctx, client, v.Name)
 	}
+}
+
+func removeContainerByProject(ctx context.Context, client *cli.Client, projectName string) {
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, c := range containers {
+		if strings.Split(c.Image, ":")[0] == projectName {
+			removeContainer(ctx, client, c.ID)
+		}
+	}
+}
+
+func removeImageByProject(ctx context.Context, client *cli.Client, projectName string) {
+	images, err := client.ImageList(ctx, types.ImageListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, i := range images {
+		for _, tag := range i.RepoTags {
+			if strings.Split(tag, ":")[0] == projectName {
+				removeImage(ctx, client, i.ID)
+				return
+			}
+		}
+	}
+}
+
+func newVersionRequired(images []types.ImageSummary, config Config, oldConfig Config, projectName string, shortHash string) bool {
+	// Check if repo updated
+	for _, i := range images {
+		for _, tag := range i.RepoTags {
+			tagSplit := strings.Split(tag, ":")
+			if len(tagSplit) != 2 {
+				continue
+			}
+
+			if tagSplit[0] == projectName && tagSplit[1] != shortHash {
+				return true
+			}
+		}
+	}
+
+	// Check if config changed
+	jsonConfig, _ := json.Marshal(config)
+	oldJsonConfig, _ := json.Marshal(oldConfig)
+	return string(jsonConfig) != string(oldJsonConfig)
 }

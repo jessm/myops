@@ -7,7 +7,10 @@ import (
 	"os"
 )
 
-const configFile string = "/var/myops/myops_config.json"
+const (
+	configFile    string = "/var/myops/myops_config.json"
+	oldConfigFile string = "/var/myops/previous_myops_config.json"
+)
 
 type Config struct {
 	DomainMatcher string            `json:"domainMatcher"`
@@ -21,14 +24,28 @@ type Config struct {
 
 type Configs map[string]Config
 
-func parseConfig() map[string]Config {
+func getConfigs() Configs {
 	_, err := os.Stat(configFile)
 	if errors.Is(err, os.ErrNotExist) {
 		writeSampleConfig()
 	}
 
+	return parseConfig(configFile)
+}
+
+func getOldConfigs() Configs {
+	_, err := os.Stat(oldConfigFile)
+	if errors.Is(err, os.ErrNotExist) {
+		return Configs{}
+	}
+
+	return parseConfig(oldConfigFile)
+}
+
+func parseConfig(fileName string) Configs {
+
 	var configs map[string]Config
-	content, err := ioutil.ReadFile(configFile)
+	content, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		panic(err)
 	}
@@ -82,6 +99,19 @@ func writeSampleConfig() {
 	}
 
 	err = ioutil.WriteFile(configFile, jsonSample, 0777)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func writeConfigToOldConfig() {
+	bytesRead, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		panic(err)
+	}
+
+	//Copy all the contents to the desitination file
+	err = ioutil.WriteFile(oldConfigFile, bytesRead, 0777)
 	if err != nil {
 		panic(err)
 	}
