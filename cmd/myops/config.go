@@ -65,7 +65,7 @@ func writeSampleConfig() {
 	sample := map[string]Config{
 		"ping": {
 			DomainMatcher: "localhost:3000",
-			RepoUrl:       "https://github.com/jessm/ping",
+			RepoUrl:       "https://github.com/jessm/ping.git",
 			Branch:        "ping",
 			Dockerfile:    "go/Dockerfile",
 			EnvVars: map[string]string{

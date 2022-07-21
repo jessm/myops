@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 
@@ -10,9 +11,10 @@ import (
 
 func buildImage(ctx context.Context, client *cli.Client, config Config, projectTag string) {
 	resp, err := client.ImageBuild(ctx, nil, types.ImageBuildOptions{
-		RemoteContext: config.RepoUrl + "/archive/refs/heads/" + config.Branch + ".tar.gz",
+		RemoteContext: config.RepoUrl + "#" + config.Branch,
 		Tags:          []string{projectTag},
 		Dockerfile:    config.Dockerfile,
+		Remove:        true,
 	})
 	if err != nil {
 		fmt.Println("Couldn't build image for", projectTag, err)
@@ -22,8 +24,8 @@ func buildImage(ctx context.Context, client *cli.Client, config Config, projectT
 
 	defer resp.Body.Close()
 
-	var bytes []byte
-	resp.Body.Read(bytes)
-
-	fmt.Println("Response for building image for", projectTag, ":", string(bytes))
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		fmt.Println("Docker daemon:", scanner.Text())
+	}
 }
