@@ -1,0 +1,2 @@
+alias myops_update="docker run --rm --name myops -v /var/myops:/var/myops -v /var/run/docker.sock:/var/run/docker.sock myops
+alias myops_edit="sudo vi /var/myops/myops_config.json"
