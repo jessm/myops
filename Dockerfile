@@ -9,7 +9,7 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-COPY cmd/myops/*.go ./
+COPY myops/*.go ./
 RUN go build -o /myops
 
 ##
