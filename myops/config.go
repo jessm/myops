@@ -5,11 +5,17 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 const (
 	configFile    string = "/var/myops/myops_config.json"
 	oldConfigFile string = "/var/myops/previous_myops_config.json"
+)
+
+const (
+	maxValidPort int = 8010
+	minValidPort int = 8001
 )
 
 type Config struct {
@@ -72,6 +78,13 @@ func parseConfig(fileName string) Configs {
 		if config.HostPort == "" {
 			panic("Config parse error: hostPort can't be empty, project " + name)
 		} else {
+			hostPortNum, err := strconv.Atoi(config.HostPort)
+			if err != nil {
+				panic(err)
+			}
+			if hostPortNum < minValidPort || maxValidPort < hostPortNum {
+				panic("hostPort for" + name + "is out of range, valid range is [8001, 8050]")
+			}
 			if other, ok := hostPortsUsed[config.HostPort]; ok {
 				panic("Config parse error: hostPort for " + name + " already used for " + other)
 			}
