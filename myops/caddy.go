@@ -13,7 +13,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/volume"
 	cli "github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
 )
 
 type templateConfigs struct {
@@ -177,23 +176,24 @@ func runCaddy() {
 		Image: CaddyImage,
 	}
 
-	httpPort, err := nat.NewPort("tcp", "80")
-	if err != nil {
-		fmt.Println("can't get port 80 for caddy")
-		panic(err)
-	}
+	// httpPort, err := nat.NewPort("tcp", "80")
+	// if err != nil {
+	// 	fmt.Println("can't get port 80 for caddy")
+	// 	panic(err)
+	// }
 
-	httpsPort, err := nat.NewPort("tcp", "443")
-	if err != nil {
-		fmt.Println("can't get port 443 for caddy")
-		panic(err)
-	}
+	// httpsPort, err := nat.NewPort("tcp", "443")
+	// if err != nil {
+	// 	fmt.Println("can't get port 443 for caddy")
+	// 	panic(err)
+	// }
 
 	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			httpPort:  []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "80"}},
-			httpsPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "443"}},
-		},
+		// PortBindings: nat.PortMap{
+		// 	httpPort:  []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "80"}},
+		// 	httpsPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "443"}},
+		// },
+		NetworkMode: "host",
 		RestartPolicy: container.RestartPolicy{
 			Name: "always",
 		},
