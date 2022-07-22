@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/volume"
 	cli "github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 type templateConfigs struct {
@@ -78,7 +79,7 @@ func runCaddy() {
 	}
 
 	// Check if we're already running
-	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		panic(err)
 	}
@@ -86,20 +87,25 @@ func runCaddy() {
 	for _, c := range containers {
 		for _, name := range c.Names {
 			if name == "/"+CaddyContainer {
-				// Reload the configuration
-				resp, err := client.ContainerExecCreate(ctx, c.ID, types.ExecConfig{
-					WorkingDir: "/etc/caddy",
-					Cmd:        []string{"caddy", "reload"},
-				})
-				if err != nil {
-					panic(err)
-				}
+				if c.State == "running" {
+					// Reload the configuration
+					resp, err := client.ContainerExecCreate(ctx, c.ID, types.ExecConfig{
+						WorkingDir: "/etc/caddy",
+						Cmd:        []string{"caddy", "reload"},
+					})
+					if err != nil {
+						panic(err)
+					}
 
-				if err := client.ContainerExecStart(ctx, resp.ID, types.ExecStartCheck{}); err != nil {
-					panic(err)
-				}
+					if err := client.ContainerExecStart(ctx, resp.ID, types.ExecStartCheck{}); err != nil {
+						panic(err)
+					}
 
-				return
+					return
+				} else {
+					// If state isn't running, just remove the container
+					removeContainer(ctx, client, c.ID)
+				}
 			}
 		}
 	}
@@ -171,8 +177,23 @@ func runCaddy() {
 		Image: CaddyImage,
 	}
 
+	httpPort, err := nat.NewPort("tcp", "80")
+	if err != nil {
+		fmt.Println("can't get port 80 for caddy")
+		panic(err)
+	}
+
+	httpsPort, err := nat.NewPort("tcp", "443")
+	if err != nil {
+		fmt.Println("can't get port 443 for caddy")
+		panic(err)
+	}
+
 	hostConfig := &container.HostConfig{
-		NetworkMode: "host",
+		PortBindings: nat.PortMap{
+			httpPort:  []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "80"}},
+			httpsPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "443"}},
+		},
 		RestartPolicy: container.RestartPolicy{
 			Name: "always",
 		},
