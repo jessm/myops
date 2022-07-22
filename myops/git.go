@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/storage/memory"
 )
-
-const clonePath string = "cloneTemp"
 
 const shortHashSize int = 7
 
@@ -18,9 +18,8 @@ func remoteShorthash(repoUrl string, branch string) string {
 
 	refs, err := rem.List(&git.ListOptions{})
 	if err != nil {
-		// fmt.Println("Couldn't get remote refs")
-		// panic(err)
-		return ""
+		fmt.Println("Couldn't get remote refs for", repoUrl, ", tagging with 'no_hash'")
+		return "no_hash"
 	}
 
 	for _, ref := range refs {
@@ -31,11 +30,3 @@ func remoteShorthash(repoUrl string, branch string) string {
 
 	return ""
 }
-
-// func clone(repoUrl string, branch string) {
-// 	git.PlainClone(clonePath, false, &git.CloneOptions{
-// 		URL:           repoUrl,
-// 		ReferenceName: plumbing.NewBranchReferenceName(branch),
-// 		SingleBranch:  true,
-// 	})
-// }
