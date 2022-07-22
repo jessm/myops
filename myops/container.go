@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -11,11 +12,26 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-func runContainer(ctx context.Context, client *cli.Client, config Config, hostPort string, imageName string, projectName string) error {
+func containerByProject(ctx context.Context, client *cli.Client, projectName string) *types.Container {
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, c := range containers {
+		if strings.Split(c.Image, ":")[0] == projectName {
+			return &c
+		}
+	}
+
+	return nil
+}
+
+func runContainer(ctx context.Context, client *cli.Client, config Config, hostPort string, imageName string, projectName string) (string, error) {
 	containerPort, err := nat.NewPort("tcp", config.Port)
 	if err != nil {
 		fmt.Println("Unable to create port")
-		return err
+		return "", err
 	}
 
 	hostConfig := &container.HostConfig{
@@ -64,10 +80,10 @@ func runContainer(ctx context.Context, client *cli.Client, config Config, hostPo
 
 	if err != nil {
 		log.Println(err)
-		return err
+		return "", err
 	}
 
 	client.ContainerStart(ctx, container.ID, types.ContainerStartOptions{})
 
-	return nil
+	return container.ID, nil
 }

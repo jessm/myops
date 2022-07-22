@@ -31,6 +31,8 @@ func update() {
 
 	projectsUpdated := []string{}
 
+	projectIPs := map[string]string{}
+
 	for projectName, config := range configs {
 		shortHash := remoteShorthash(config.RepoUrl, config.Branch)
 		projectTag := projectName + ":" + shortHash
@@ -42,7 +44,7 @@ func update() {
 
 			buildImage(ctx, client, config, projectTag)
 
-			err := runContainer(ctx, client, config, config.HostPort, projectTag, projectName)
+			_, err := runContainer(ctx, client, config, config.HostPort, projectTag, projectName)
 			if err != nil {
 				panic(err)
 			}
@@ -51,7 +53,12 @@ func update() {
 		}
 	}
 
-	renderCaddyfile(configs)
+	for projectName := range configs {
+		ip := containerByProject(ctx, client, projectName).NetworkSettings.Networks["bridge"].IPAddress
+		projectIPs[projectName] = ip
+	}
+
+	renderCaddyfile(configs, projectIPs)
 	fmt.Println("Caddyfile created:")
 	printCaddyfile()
 	fmt.Println("End of Caddyfile")

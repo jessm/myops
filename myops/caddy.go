@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -18,8 +17,8 @@ import (
 )
 
 type templateConfigs struct {
-	C     Configs
-	Ports map[string]string
+	C   Configs
+	IPs map[string]string
 }
 
 const (
@@ -37,9 +36,9 @@ const (
 const CaddyImage string = "caddy:2.5.2"
 const CaddyContainer string = "caddy"
 
-const caddyTemplate string = `{{ range .C }}
-{{ .DomainMatcher }} {
-	reverse_proxy localhost:{{ .HostPort }}
+const caddyTemplate string = `{{ range $name, $config := .C }}
+{{ $config.DomainMatcher }} {
+	reverse_proxy {{ index $.IPs $name }}:{{ $config.Port }}
 }
 {{ end }}`
 
@@ -52,7 +51,7 @@ func printCaddyfile() {
 	fmt.Println(string(bytes))
 }
 
-func renderCaddyfile(configs Configs) {
+func renderCaddyfile(configs Configs, projectIPs map[string]string) {
 	t, err := template.New("Caddyfile").Parse(caddyTemplate)
 	if err != nil {
 		panic(err)
@@ -64,7 +63,8 @@ func renderCaddyfile(configs Configs) {
 	}
 
 	err = t.Execute(file, templateConfigs{
-		C: configs,
+		C:   configs,
+		IPs: projectIPs,
 	})
 	if err != nil {
 		panic(err)
@@ -193,19 +193,6 @@ func runCaddy() {
 		httpPort:  []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "80"}},
 		httpsPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "443"}},
 	}
-
-	// Map port range for use for projects
-	for i := minValidPort; i <= maxValidPort; i++ {
-		portStr := strconv.Itoa(i)
-		newPort, err := nat.NewPort("tcp", portStr)
-		if err != nil {
-			fmt.Println("caddy couldn' get port for mapping to project:", i)
-			panic(err)
-		}
-		portMap[newPort] = []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portStr}}
-	}
-
-	fmt.Println("Caddy mapping ports:", portMap)
 
 	hostConfig := &container.HostConfig{
 		PortBindings: portMap,
