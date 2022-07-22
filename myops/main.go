@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/docker/docker/api/types"
 	cli "github.com/docker/docker/client"
@@ -30,9 +29,6 @@ func update() {
 	cleanupImages(ctx, client, configs)
 	cleanupVolumes(ctx, client, configs)
 
-	portNum := 8001
-	portMap := map[string]string{}
-
 	projectsUpdated := []string{}
 
 	for projectName, config := range configs {
@@ -46,20 +42,16 @@ func update() {
 
 			buildImage(ctx, client, config, projectTag)
 
-			err := runContainer(ctx, client, config, strconv.Itoa(portNum), projectTag, projectName)
+			err := runContainer(ctx, client, config, config.HostPort, projectTag, projectName)
 			if err != nil {
 				panic(err)
 			}
 
 			projectsUpdated = append(projectsUpdated, projectName)
 		}
-
-		portMap[projectName] = strconv.Itoa(portNum)
-
-		portNum++
 	}
 
-	renderCaddyfile(configs, portMap)
+	renderCaddyfile(configs)
 	fmt.Println("Caddyfile created:")
 	printCaddyfile()
 	fmt.Println("End of Caddyfile")

@@ -20,6 +20,7 @@ type Config struct {
 	EnvVars       map[string]string `json:"envVars"`
 	Port          string            `json:"port"`
 	VolumePath    string            `json:"volumePath"`
+	HostPort      string            `json:"hostPort"`
 }
 
 type Configs map[string]Config
@@ -50,6 +51,8 @@ func parseConfig(fileName string) Configs {
 		panic(err)
 	}
 
+	hostPortsUsed := map[string]string{}
+
 	for name, config := range configs {
 		if config.DomainMatcher == "" {
 			panic("Config parse error: domainMatcher can't be empty, project " + name)
@@ -65,6 +68,14 @@ func parseConfig(fileName string) Configs {
 		}
 		if config.Port == "" {
 			config.Port = "80"
+		}
+		if config.HostPort == "" {
+			panic("Config parse error: hostPort can't be empty, project " + name)
+		} else {
+			if other, ok := hostPortsUsed[config.HostPort]; ok {
+				panic("Config parse error: hostPort for " + name + " already used for " + other)
+			}
+			hostPortsUsed[config.HostPort] = name
 		}
 		// If volumePath is empty, just don't mount volumes
 		// If envVars are empty, just don't add env vars
@@ -90,6 +101,7 @@ func writeSampleConfig() {
 			},
 			Port:       "8000",
 			VolumePath: "/app",
+			HostPort:   "8001",
 		},
 	}
 
