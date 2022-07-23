@@ -38,12 +38,23 @@ func update() {
 		projectTag := projectName + ":" + shortHash
 
 		oldConfig, oldConfigExists := oldConfigs[projectName]
-		if !oldConfigExists || newVersionRequired(images, config, oldConfig, projectName, shortHash) {
+		// If no old config exists, we count that as a config change
+		configChanged := !oldConfigExists || checkConfigChanged(config, oldConfig, projectName)
+		shortHashChanged := checkShortHashChanged(images, projectName, shortHash)
+
+		// If config or shorthash changed, we want to rerun the container, so stop the old one
+		if configChanged || shortHashChanged {
 			removeContainerByProject(ctx, client, projectName)
+		}
+
+		// If shorthash changed, also remove the image and rebuild it
+		if shortHashChanged {
 			removeImageByProject(ctx, client, projectName)
-
 			buildImage(ctx, client, config, projectTag)
+		}
 
+		// Finally if either changed, rerun the container
+		if configChanged || shortHashChanged {
 			_, err := runContainer(ctx, client, config, config.HostPort, projectTag, projectName)
 			if err != nil {
 				panic(err)

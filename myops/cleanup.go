@@ -164,7 +164,7 @@ func removeImageByProject(ctx context.Context, client *cli.Client, projectName s
 	}
 }
 
-func newVersionRequired(images []types.ImageSummary, config Config, oldConfig Config, projectName string, shortHash string) bool {
+func checkShortHashChanged(images []types.ImageSummary, projectName string, shortHash string) bool {
 	// Check if repo updated
 	for _, i := range images {
 		for _, tag := range i.RepoTags {
@@ -179,6 +179,10 @@ func newVersionRequired(images []types.ImageSummary, config Config, oldConfig Co
 		}
 	}
 
+	return false
+}
+
+func checkConfigChanged(config Config, oldConfig Config, projectName string) bool {
 	// Check if config changed
 	jsonConfig, _ := json.Marshal(config)
 	oldJsonConfig, _ := json.Marshal(oldConfig)
