@@ -1,14 +1,16 @@
 ##
 ## Build
 ##
-FROM golang:1.16-buster AS build
+FROM golang:1.18-buster AS build
 
 WORKDIR /app
 
-COPY cmd/ping/main.go ./
-COPY cmd/ping/go.mod ./
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
 
-RUN go build -o /ping
+COPY myops/*.go ./
+RUN go build -o /myops
 
 ##
 ## Deploy
@@ -16,10 +18,6 @@ RUN go build -o /ping
 
 FROM gcr.io/distroless/base-debian10
 
-WORKDIR /app
+COPY --from=build /myops /myops
 
-COPY --from=build /ping /ping
-
-EXPOSE 8123
-
-ENTRYPOINT ["/ping"]
+ENTRYPOINT ["/myops"]
