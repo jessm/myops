@@ -74,7 +74,7 @@ func update() {
 	printCaddyfile()
 	fmt.Println("End of Caddyfile")
 
-	runCaddy()
+	runCaddy(ctx, client)
 
 	fmt.Println("Finished updating, writing to old config file")
 	writeConfigToOldConfig()

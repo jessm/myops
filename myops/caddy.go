@@ -16,6 +16,7 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
+// Struct for passing arguments to caddyfile template render
 type templateConfigs struct {
 	C   Configs
 	IPs map[string]string
@@ -71,13 +72,7 @@ func renderCaddyfile(configs Configs, projectIPs map[string]string) {
 	}
 }
 
-func runCaddy() {
-	ctx := context.Background()
-	client, err := cli.NewClientWithOpts(cli.FromEnv, cli.WithAPIVersionNegotiation())
-	if err != nil {
-		panic(err)
-	}
-
+func runCaddy(ctx context.Context, client *cli.Client) {
 	// Check if we're already running
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
@@ -177,6 +172,7 @@ func runCaddy() {
 		Image: CaddyImage,
 	}
 
+	// Always map port 80 and 443
 	httpPort, err := nat.NewPort("tcp", "80")
 	if err != nil {
 		fmt.Println("can't get port 80 for caddy")
