@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -89,7 +88,7 @@ func runContainer(ctx context.Context, client *cli.Client, config Config, hostPo
 	)
 
 	if err != nil {
-		log.Println(err)
+		fmt.Println("couldn't run container for project", projectName, err)
 		return "", err
 	}
 

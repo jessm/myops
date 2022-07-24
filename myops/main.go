@@ -55,10 +55,11 @@ func update() {
 
 		// Finally if either changed, rerun the container
 		if configChanged || shortHashChanged {
-			_, err := runContainer(ctx, client, config, config.HostPort, projectTag, projectName)
+			containerId, err := runContainer(ctx, client, config, config.HostPort, projectTag, projectName)
 			if err != nil {
 				panic(err)
 			}
+			fmt.Println("Ran container", containerId, "for project", projectName)
 
 			projectsUpdated = append(projectsUpdated, projectName)
 		}
