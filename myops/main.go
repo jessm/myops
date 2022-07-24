@@ -48,7 +48,7 @@ func update() {
 		}
 
 		// If shorthash changed, also remove the image and rebuild it
-		if shortHashChanged {
+		if shortHashChanged || !oldConfigExists {
 			removeImageByProject(ctx, client, projectName)
 			buildImage(ctx, client, config, projectTag)
 		}

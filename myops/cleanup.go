@@ -22,7 +22,9 @@ func removeImage(ctx context.Context, client *cli.Client, id string) {
 
 // Just do best effort image cleanup to save some space
 func cleanupImages(ctx context.Context, client *cli.Client, configs Configs) {
-	images, err := client.ImageList(ctx, types.ImageListOptions{})
+	images, err := client.ImageList(ctx, types.ImageListOptions{
+		// Filters: filters.NewArgs(filters.KeyValuePair{Key: "myops"}),
+	})
 	if err != nil {
 		panic(err)
 	}

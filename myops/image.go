@@ -15,6 +15,7 @@ func buildImage(ctx context.Context, client *cli.Client, config Config, projectT
 		Tags:          []string{projectTag},
 		Dockerfile:    config.Dockerfile,
 		Remove:        true,
+		Labels:        map[string]string{"myops": ""},
 	})
 	if err != nil {
 		fmt.Println("Couldn't build image for", projectTag, err)
