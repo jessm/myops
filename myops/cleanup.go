@@ -22,7 +22,9 @@ func removeImage(ctx context.Context, client *cli.Client, id string) {
 
 // Just do best effort image cleanup to save some space
 func cleanupImages(ctx context.Context, client *cli.Client, configs Configs) {
-	images, err := client.ImageList(ctx, types.ImageListOptions{})
+	images, err := client.ImageList(ctx, types.ImageListOptions{
+		Filters: filters.NewArgs(filters.KeyValuePair{Key: "label", Value: "myops"}),
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -73,7 +75,8 @@ func cleanupContainers(ctx context.Context, client *cli.Client, configs Configs)
 	fmt.Println("Hostname:", hostname)
 
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
-		All: true,
+		All:     true,
+		Filters: filters.NewArgs(filters.KeyValuePair{Key: "label", Value: "myops"}),
 	})
 	if err != nil {
 		panic(err)
@@ -113,7 +116,7 @@ func removeVolume(ctx context.Context, client *cli.Client, name string) {
 }
 
 func cleanupVolumes(ctx context.Context, client *cli.Client, configs Configs) {
-	resp, err := client.VolumeList(ctx, filters.Args{})
+	resp, err := client.VolumeList(ctx, filters.NewArgs(filters.KeyValuePair{Key: "label", Value: "myops"}))
 	if err != nil {
 		panic(err)
 	}

@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/volume"
 	cli "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -49,8 +49,16 @@ func runContainer(ctx context.Context, client *cli.Client, config Config, hostPo
 	}
 
 	if config.VolumePath != "" {
+		vol, err := client.VolumeCreate(ctx, volume.VolumeCreateBody{
+			Name:   projectName,
+			Labels: map[string]string{"myops": ""},
+		})
+		if err != nil {
+			panic(err)
+		}
+
 		hostConfig.Binds = []string{
-			projectName + ":" + config.VolumePath,
+			vol.Name + ":" + config.VolumePath,
 		}
 	}
 
@@ -67,6 +75,7 @@ func runContainer(ctx context.Context, client *cli.Client, config Config, hostPo
 		Image:        imageName,
 		Env:          envList,
 		ExposedPorts: exposedPorts,
+		Labels:       map[string]string{"myops": ""},
 	}
 
 	container, err := client.ContainerCreate(
@@ -79,7 +88,7 @@ func runContainer(ctx context.Context, client *cli.Client, config Config, hostPo
 	)
 
 	if err != nil {
-		log.Println(err)
+		fmt.Println("couldn't run container for project", projectName, err)
 		return "", err
 	}
 
